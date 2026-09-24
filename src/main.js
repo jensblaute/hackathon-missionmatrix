@@ -36,13 +36,6 @@ document.addEventListener('DOMContentLoaded', () => {
   initSyncEngine();
 
   // 6. Bind Top HUD Controls
-  const shareBtn = document.getElementById('hud-share-btn');
-  if (shareBtn) {
-    shareBtn.addEventListener('click', () => {
-      modals.openShareModal();
-    });
-  }
-
   // Drift Pause/Resume
   const pauseBtn = document.getElementById('pause-drift-btn');
   const pauseIcon = document.getElementById('pause-icon');

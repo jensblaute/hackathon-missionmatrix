@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' stop-color='%2300f0ff'/><stop offset='100%25' stop-color='%238a2be2'/></linearGradient></defs><circle cx='50' cy='50' r='45' fill='%23090d16' stroke='url(%23g)' stroke-width='6'/><polygon points='50,22 74,68 26,68' fill='url(%23g)'/></svg>" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Hackathon Team Space & Idea Board | Group 16</title>
+    <meta name="description" content="Slick, high-tech team discovery space and real-time idea voting matrix for hackathon teams." />
+
+    <!-- Google Fonts: Outfit, Inter, JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <!-- Background Animated Cyber Constellation -->
+    <canvas id="bg-canvas"></canvas>
+
+    <div id="app" class="app-root">
+      <!-- Top HUD Navigation Bar -->
+      <header class="top-hud glass-header">
+        <div class="hud-left">
+          <div class="brand-badge">
+            <span class="brand-core"></span>
+            <span class="brand-glow"></span>
+          </div>
+          <div class="brand-text">
+            <div class="team-title-row">
+              <h1 class="team-name" id="display-team-name" title="Click to edit team name">Group 16 • Vanguard</h1>
+              <button class="icon-btn edit-name-btn" id="edit-team-name-btn" title="Edit Team Name">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                </svg>
+              </button>
+            </div>
+            <div class="event-meta">
+              <span class="event-tag">AIAPC14 HACKATHON</span>
+              <span class="divider">•</span>
+              <span class="status-live"><span class="live-dot"></span> LIVE TEAM SPACE</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Center Countdown Timer -->
+        <div class="hud-center">
+          <div class="timer-box glass-panel-sm" id="hackathon-countdown" title="Hackathon Demo & Pitch Deadline">
+            <span class="timer-label">DEMO COUNTDOWN</span>
+            <div class="timer-display">
+              <span class="time-digit" id="timer-hours">23</span><span class="time-colon">:</span>
+              <span class="time-digit" id="timer-minutes">59</span><span class="time-colon">:</span>
+              <span class="time-digit" id="timer-seconds">59</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Quick Actions & Counters -->
+        <div class="hud-right">
+          <div class="hud-counters">
+            <div class="counter-chip" title="Active Team Members">
+              <span class="counter-icon">👥</span>
+              <span class="counter-val" id="members-count">4</span>
+            </div>
+            <div class="counter-chip" title="Proposed Ideas">
+              <span class="counter-icon">💡</span>
+              <span class="counter-val" id="ideas-count">3</span>
+            </div>
+          </div>
+
+          <div class="hud-actions">
+            <div id="hud-user-slot"></div>
+
+            <button class="btn btn-secondary" id="hud-share-btn" title="Share with teammates & QR Code">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13"/>
+              </svg>
+              <span>Share & QR</span>
+            </button>
+
+            <div class="icon-tools">
+              <button class="icon-btn tool-btn" id="pause-drift-btn" title="Pause / Resume Floating Motion (Space)">
+                <svg id="pause-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <rect x="6" y="4" width="4" height="16"></rect>
+                  <rect x="14" y="4" width="4" height="16"></rect>
+                </svg>
+              </button>
+
+              <button class="icon-btn tool-btn" id="sound-toggle-btn" title="Toggle Sound FX">
+                <svg id="sound-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Main Interactive Space -->
+      <main class="space-viewport" id="space-viewport">
+        <!-- Floating member cards are inserted here dynamically -->
+        <div id="floating-cards-layer" class="cards-layer"></div>
+
+        <!-- Central Idea Matrix / Board -->
+        <div id="central-idea-hub" class="central-hub"></div>
+      </main>
+
+      <!-- Bottom Hint Bar -->
+      <footer class="bottom-hud">
+        <div class="hud-hint">
+          <span class="key-badge">Drag</span> cards freely &nbsp;•&nbsp;
+          <span class="key-badge">Click</span> member for spotlight &nbsp;•&nbsp;
+          <span class="key-badge">Upvote</span> in center to pick hackathon project
+        </div>
+        <div class="hud-shortcuts">
+          <span class="shortcut-tip"><kbd>M</kbd> Add Member</span>
+          <span class="shortcut-tip"><kbd>I</kbd> Propose Idea</span>
+          <span class="shortcut-tip"><kbd>Space</kbd> Pause Drift</span>
+        </div>
+      </footer>
+    </div>
+
+    <!-- Modals Overlay -->
+    <div id="modal-overlay" class="modal-overlay hidden"></div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

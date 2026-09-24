@@ -88,18 +88,12 @@ class Store {
       if (raw) {
         const parsed = JSON.parse(raw);
 
-        // Filter out dummy members
+        // Filter out any legacy dummy demo members if any remain
         let members = (parsed.teamMembers || []).filter(m => {
           const lowerName = (m.name || '').toLowerCase();
           const isDummy = dummyNames.some(d => lowerName.includes(d)) || ['m1', 'm2', 'm3', 'm4'].includes(m.id);
           return !isDummy;
         });
-
-        // Ensure Jens Blaute is preserved or added
-        const hasJens = members.some(m => (m.name || '').toLowerCase().includes('jens'));
-        if (!hasJens) {
-          members.unshift({ ...DEFAULT_MEMBERS[0] });
-        }
 
         // Filter out dummy ideas
         let ideas = (parsed.ideas || []).filter(i => {
@@ -108,10 +102,11 @@ class Store {
           return !isDummyId && !isDummyAuthor;
         });
 
-        this.teamMembers = members;
+        // If members were saved, preserve them exactly as edited by user
+        this.teamMembers = members.length > 0 ? members : [...DEFAULT_MEMBERS];
         this.ideas = ideas;
-        this.messages = parsed.messages || [...DEFAULT_MESSAGES];
-        this.resources = parsed.resources || [...DEFAULT_RESOURCES];
+        this.messages = Array.isArray(parsed.messages) ? parsed.messages : [...DEFAULT_MESSAGES];
+        this.resources = Array.isArray(parsed.resources) ? parsed.resources : [...DEFAULT_RESOURCES];
         this.teamName = parsed.teamName || 'Group 16 • Hackathon Vanguard';
         this.targetTime = parsed.targetTime || (Date.now() + 24 * 3600 * 1000);
         this.roomCode = parsed.roomCode || 'g16-vanguard';
@@ -188,11 +183,15 @@ class Store {
       const found = this.teamMembers.find(m => m.id === myId);
       if (found) return found;
     }
-    // Auto-bind Jens Blaute on this device if present
+    // Auto-bind if matching Jens or if there is only 1 member on this board
     const jens = this.teamMembers.find(m => (m.name || '').toLowerCase().includes('jens'));
     if (jens) {
       setMyMemberId(jens.id);
       return jens;
+    }
+    if (this.teamMembers.length === 1) {
+      setMyMemberId(this.teamMembers[0].id);
+      return this.teamMembers[0];
     }
     return null;
   }

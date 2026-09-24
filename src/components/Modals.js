@@ -1,6 +1,7 @@
 import { store } from '../state/store.js';
 import { TECH_AVATARS, getAvatarDataUrl, compressImageFile } from '../utils/avatars.js';
 import { playClickSound, playSuccessSound } from '../utils/audio.js';
+import { signInWithGoogle } from '../services/sync.js';
 
 export class ModalsManager {
   constructor(overlayEl) {
@@ -44,7 +45,7 @@ export class ModalsManager {
     this.overlay.classList.remove('hidden');
 
     this.selectedAvatar = editMember?.photo || 'cyber-neural';
-    this.customPhotoData = editMember?.photo?.startsWith('data:') ? editMember.photo : null;
+    this.customPhotoData = editMember?.photo?.startsWith('data:') || editMember?.photo?.startsWith('http') ? editMember.photo : null;
 
     let interestsList = editMember ? [...(editMember.interests || [])] : ['AI', 'React', 'Hackathon'];
 
@@ -62,6 +63,25 @@ export class ModalsManager {
         </div>
 
         <form id="member-form" class="modal-body scrollable">
+          ${!editMember ? `
+            <!-- Google Fast Auth Option -->
+            <div class="google-auth-container">
+              <button type="button" class="btn-google-auth" id="google-login-btn">
+                <svg width="18" height="18" viewBox="0 0 24 24">
+                  <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.4 9 5 12 5z"/>
+                  <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.7-.2-2.3H12v4.6h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.9z"/>
+                  <path fill="#FBBC05" d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.8 0-1.3.2-2.1.4-2.8L1.9 6.3C.7 8.7 0 10.8 0 12s.7 3.3 1.9 5.7l3.7-2.9z"/>
+                  <path fill="#34A853" d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.4-6.4-5.2L1.9 16c1.8 3.7 5.6 7 10.1 7z"/>
+                </svg>
+                <span>Continue with Google</span>
+              </button>
+              <div class="auth-divider">
+                <span class="auth-divider-line"></span>
+                <span class="auth-divider-text">OR CUSTOMIZE YOUR PROFILE</span>
+                <span class="auth-divider-line"></span>
+              </div>
+            </div>
+          ` : ''}
           <!-- Avatar Picker -->
           <div class="form-group">
             <label class="form-label">Profile Visual (Choose Avatar, Take Selfie, or Upload)</label>
@@ -193,6 +213,49 @@ export class ModalsManager {
     const webcamVideo = this.overlay.querySelector('#webcam-video');
     const snapBtn = this.overlay.querySelector('#snap-photo-btn');
     const cancelWebcamBtn = this.overlay.querySelector('#cancel-webcam-btn');
+    const googleLoginBtn = this.overlay.querySelector('#google-login-btn');
+
+    // Google Sign-in Handler
+    if (googleLoginBtn) {
+      googleLoginBtn.addEventListener('click', async () => {
+        playClickSound();
+        try {
+          googleLoginBtn.disabled = true;
+          googleLoginBtn.innerHTML = `<span>Connecting Google...</span>`;
+          const user = await signInWithGoogle();
+          if (user) {
+            if (user.displayName) {
+              const nameInput = this.overlay.querySelector('#member-name');
+              if (nameInput) nameInput.value = user.displayName;
+            }
+            if (user.photoURL) {
+              this.customPhotoData = user.photoURL;
+              if (previewImg) previewImg.src = user.photoURL;
+              presetsBox.querySelectorAll('.avatar-preset-btn').forEach(b => b.classList.remove('active'));
+            }
+            playSuccessSound();
+            googleLoginBtn.innerHTML = `
+              <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#34A853" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              <span>Signed in as ${escapeHtml(user.displayName || user.email)}</span>
+            `;
+            googleLoginBtn.classList.add('btn-google-auth-success');
+          }
+        } catch (err) {
+          console.warn('Google sign-in status:', err);
+          googleLoginBtn.disabled = false;
+          googleLoginBtn.innerHTML = `
+            <svg width="18" height="18" viewBox="0 0 24 24">
+              <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.4 9 5 12 5z"/>
+              <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.7-.2-2.3H12v4.6h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.9z"/>
+              <path fill="#FBBC05" d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.8 0-1.3.2-2.1.4-2.8L1.9 6.3C.7 8.7 0 10.8 0 12s.7 3.3 1.9 5.7l3.7-2.9z"/>
+              <path fill="#34A853" d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.4-6.4-5.2L1.9 16c1.8 3.7 5.6 7 10.1 7z"/>
+            </svg>
+            <span>Continue with Google</span>
+          `;
+          alert('Google Login Note: ' + (err.message || 'Please check Firebase Auth configuration.'));
+        }
+      });
+    }
 
     // Preset avatar clicks
     presetsBox.querySelectorAll('.avatar-preset-btn').forEach(btn => {

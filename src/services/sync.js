@@ -141,6 +141,44 @@ export async function pushStateToCloud(state) {
   }
 }
 
+let firebaseAuth = null;
+
+export async function getFirebaseAuth() {
+  if (firebaseAuth) return firebaseAuth;
+  if (!firebaseApp) {
+    const envConfig = {
+      apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+      authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+      projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+      storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+      messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+      appId: import.meta.env.VITE_FIREBASE_APP_ID
+    };
+    const cfg = (envConfig.apiKey && envConfig.projectId) ? envConfig : store.getState().firebaseConfig;
+    if (cfg) {
+      const { initializeApp, getApps, getApp } = await import('firebase/app');
+      firebaseApp = getApps().length === 0 ? initializeApp(cfg) : getApp();
+    }
+  }
+  if (firebaseApp) {
+    const { getAuth } = await import('firebase/auth');
+    firebaseAuth = getAuth(firebaseApp);
+    return firebaseAuth;
+  }
+  return null;
+}
+
+export async function signInWithGoogle() {
+  const auth = await getFirebaseAuth();
+  if (!auth) {
+    throw new Error('Firebase configuration not found. Please set Vercel environment variables or enter Firebase config.');
+  }
+  const { GoogleAuthProvider, signInWithPopup } = await import('firebase/auth');
+  const provider = new GoogleAuthProvider();
+  const result = await signInWithPopup(auth, provider);
+  return result.user;
+}
+
 export function isCloudConnected() {
   return !!firestoreDb;
 }

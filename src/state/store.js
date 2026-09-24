@@ -183,16 +183,6 @@ class Store {
       const found = this.teamMembers.find(m => m.id === myId);
       if (found) return found;
     }
-    // Auto-bind if matching Jens or if there is only 1 member on this board
-    const jens = this.teamMembers.find(m => (m.name || '').toLowerCase().includes('jens'));
-    if (jens) {
-      setMyMemberId(jens.id);
-      return jens;
-    }
-    if (this.teamMembers.length === 1) {
-      setMyMemberId(this.teamMembers[0].id);
-      return this.teamMembers[0];
-    }
     return null;
   }
 

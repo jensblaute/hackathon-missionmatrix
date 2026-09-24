@@ -40,6 +40,8 @@ export function initSyncEngine() {
           payload: {
             teamMembers: state.teamMembers,
             ideas: state.ideas,
+            messages: state.messages,
+            resources: state.resources,
             teamName: state.teamName,
             targetTime: state.targetTime
           }
@@ -128,6 +130,8 @@ export async function pushStateToCloud(state) {
     await setDoc(roomRef, {
       teamMembers: state.teamMembers,
       ideas: state.ideas,
+      messages: state.messages,
+      resources: state.resources,
       teamName: state.teamName,
       targetTime: state.targetTime,
       updatedAt: Date.now()

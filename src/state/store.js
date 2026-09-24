@@ -47,6 +47,31 @@ const DEFAULT_MEMBERS = [
 
 const DEFAULT_IDEAS = [];
 
+const DEFAULT_MESSAGES = [
+  {
+    id: 'msg_init',
+    senderId: 'm_jens',
+    senderName: 'Jens Blaute',
+    senderPhoto: 'cyber-neural',
+    text: 'Welcome to the team space! Drop project ideas, share interesting links, and let’s build something great! 🚀🔥',
+    gifUrl: null,
+    createdAt: Date.now() - 1000 * 60 * 5
+  }
+];
+
+const DEFAULT_RESOURCES = [
+  {
+    id: 'res_init',
+    title: 'Hackathon Mission & Rulebook',
+    url: 'https://github.com/jensblaute/hackathon-missionmatrix',
+    description: 'Main project repository, instructions, and collaboration hub for Group 16.',
+    authorId: 'm_jens',
+    authorName: 'Jens Blaute',
+    authorPhoto: 'cyber-neural',
+    createdAt: Date.now() - 1000 * 60 * 10
+  }
+];
+
 class Store {
   constructor() {
     this.listeners = new Set();
@@ -85,6 +110,8 @@ class Store {
 
         this.teamMembers = members;
         this.ideas = ideas;
+        this.messages = parsed.messages || [...DEFAULT_MESSAGES];
+        this.resources = parsed.resources || [...DEFAULT_RESOURCES];
         this.teamName = parsed.teamName || 'Group 16 • Hackathon Vanguard';
         this.targetTime = parsed.targetTime || (Date.now() + 24 * 3600 * 1000);
         this.roomCode = parsed.roomCode || 'g16-vanguard';
@@ -98,6 +125,8 @@ class Store {
 
     this.teamMembers = [...DEFAULT_MEMBERS];
     this.ideas = [...DEFAULT_IDEAS];
+    this.messages = [...DEFAULT_MESSAGES];
+    this.resources = [...DEFAULT_RESOURCES];
     this.teamName = 'Group 16 • Hackathon Vanguard';
     this.targetTime = Date.now() + 24 * 3600 * 1000;
     this.roomCode = 'g16-vanguard';
@@ -110,6 +139,8 @@ class Store {
       const data = {
         teamMembers: this.teamMembers,
         ideas: this.ideas,
+        messages: this.messages,
+        resources: this.resources,
         teamName: this.teamName,
         targetTime: this.targetTime,
         roomCode: this.roomCode,
@@ -141,6 +172,8 @@ class Store {
     return {
       teamMembers: this.teamMembers,
       ideas: this.ideas,
+      messages: this.messages,
+      resources: this.resources,
       teamName: this.teamName,
       targetTime: this.targetTime,
       roomCode: this.roomCode,
@@ -323,6 +356,60 @@ class Store {
     });
   }
 
+  // --- Chat Actions ---
+  addMessage(msgData) {
+    const author = this.getCurrentMember();
+    const newMsg = {
+      id: 'msg_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      senderId: author ? author.id : this.clientId,
+      senderName: author ? author.name : 'Teammate',
+      senderPhoto: author ? author.photo : 'cyber-neural',
+      text: msgData.text ? msgData.text.trim() : '',
+      gifUrl: msgData.gifUrl || null,
+      createdAt: Date.now()
+    };
+
+    if (!Array.isArray(this.messages)) this.messages = [];
+    this.messages.push(newMsg);
+    // Keep last 150 messages
+    if (this.messages.length > 150) this.messages = this.messages.slice(-150);
+    this.notify('MESSAGE_ADDED', newMsg);
+    return newMsg;
+  }
+
+  // --- Resource Drop Box Actions ---
+  addResource(resData) {
+    const author = this.getCurrentMember();
+    let url = resData.url ? resData.url.trim() : '';
+    if (url && !/^https?:\/\//i.test(url)) {
+      url = 'https://' + url;
+    }
+
+    const newRes = {
+      id: 'res_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      title: resData.title ? resData.title.trim() : (url || 'Resource Link'),
+      url: url,
+      description: resData.description ? resData.description.trim() : '',
+      authorId: author ? author.id : this.clientId,
+      authorName: author ? author.name : 'Teammate',
+      authorPhoto: author ? author.photo : 'cyber-neural',
+      createdAt: Date.now()
+    };
+
+    if (!Array.isArray(this.resources)) this.resources = [];
+    this.resources.unshift(newRes);
+    this.notify('RESOURCE_ADDED', newRes);
+    return newRes;
+  }
+
+  deleteResource(resId) {
+    const idx = this.resources.findIndex(r => r.id === resId);
+    if (idx !== -1) {
+      const removed = this.resources.splice(idx, 1)[0];
+      this.notify('RESOURCE_DELETED', removed);
+    }
+  }
+
   setTeamName(name) {
     this.teamName = name;
     this.notify('TEAM_NAME_UPDATED', name);
@@ -336,6 +423,8 @@ class Store {
   importData(data) {
     if (data.teamMembers) this.teamMembers = data.teamMembers;
     if (data.ideas) this.ideas = data.ideas;
+    if (data.messages) this.messages = data.messages;
+    if (data.resources) this.resources = data.resources;
     if (data.teamName) this.teamName = data.teamName;
     if (data.targetTime) this.targetTime = data.targetTime;
     this.updateIdeaRankings();
@@ -345,6 +434,8 @@ class Store {
   resetToDefault() {
     this.teamMembers = [...DEFAULT_MEMBERS];
     this.ideas = [...DEFAULT_IDEAS];
+    this.messages = [...DEFAULT_MESSAGES];
+    this.resources = [...DEFAULT_RESOURCES];
     this.teamName = 'Group 16 • Hackathon Vanguard';
     this.updateIdeaRankings();
     this.notify('STATE_RESET', this.getState());

@@ -26,9 +26,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 4. Initialize Central Idea Matrix
   const ideaHub = document.getElementById('central-idea-hub');
-  const ideaBoard = new IdeaBoard(ideaHub, () => {
-    modals.openAddIdeaModal();
-  });
+  const ideaBoard = new IdeaBoard(
+    ideaHub,
+    () => modals.openAddIdeaModal(),
+    () => modals.openRequireMemberModal()
+  );
 
   // 5. Initialize Multi-Tier Sync (BroadcastChannel + Cloud)
   initSyncEngine();
